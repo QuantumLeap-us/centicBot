@@ -14,14 +14,6 @@ function readFiles(filePath) {
     }
 }
 
-function getRandomProxy(proxies) {
-    if (!proxies || proxies.length === 0) {
-        return null;
-    }
-    const randomIndex = Math.floor(Math.random() * proxies.length);
-    return proxies[randomIndex];
-}
-
 function createAxiosInstance(proxy) {
     if (proxy) {
         const agent = new HttpsProxyAgent(proxy);
@@ -32,6 +24,17 @@ function createAxiosInstance(proxy) {
     } else {
         return axios.create();
     }
+}
+
+let currentProxyIndex = 0;
+
+function getNextProxy(proxies) {
+    if (!proxies || proxies.length === 0) {
+        return null;
+    }
+    const proxy = proxies[currentProxyIndex];
+    currentProxyIndex = (currentProxyIndex + 1) % proxies.length;
+    return proxy;
 }
 
 // Fetch tasks 
@@ -92,7 +95,7 @@ async function claimUsers(token, proxy = null) {
     const axiosInstance = createAxiosInstance(proxy);
     try {
         await axiosInstance.post(url, {
-            "referralCode": "eJwNwQkRACAIBMBKp4gMcXgzGF928TDILa2UcFikqKsjGtCUvS63y_j7xwuX"
+            "referralCode": "eJwFwQEBACAIA7BKgKgQ53jJYHw3eShrp_kAkcJlJ3FTJYydjdi4CJ31AQtpDFY="
         }, {
             headers: {
                 'x-apikey': token,
@@ -108,12 +111,21 @@ async function claimTasks(token, task, proxy = null) {
     const axiosInstance = createAxiosInstance(proxy);
 
     try {
+        const delay = Math.floor(Math.random() * 2000) + 1000; //
+        await new Promise(resolve => setTimeout(resolve, delay));
+
         const response = await axiosInstance.post(url, task, {
             headers: { 'x-apikey': token },
         });
         log.info(`Claimed task Response:`, response.data);
+        return true;
     } catch (error) {
-        log.error(`Error claiming task:`, error.message);
+        if (error.response && error.response.status === 404) {
+            log.warn(`Task ${task.taskId} no longer available`);
+        } else {
+            log.error(`Error claiming task:`, error.message);
+        }
+        return false;
     }
 }
 
@@ -135,7 +147,7 @@ async function main() {
     while (true) {
         for (const token of tokens) {
             try {
-                const proxy = useProxy ? getRandomProxy(proxies) : null;
+                const proxy = useProxy ? getNextProxy(proxies) : null;
                 if (useProxy) log.info(`Using proxy:`, { proxy });
 
                 log.info(`Fetching User Data For:`, { token });
@@ -150,7 +162,11 @@ async function main() {
 
                 for (const task of unclaimedTasks) {
                     log.info(`Claiming task:`, { taskId: task.taskId });
-                    await claimTasks(token, task, proxy);
+                    const success = await claimTasks(token, task, proxy);
+                    if (!success) {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        continue;
+                    }
                 }
 
             } catch (error) {

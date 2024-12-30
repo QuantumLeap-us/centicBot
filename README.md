@@ -14,7 +14,7 @@ This script automates claim tasks to earn the Centic Points (CTP)
 
 - Node.js installed on your machine
 - `tokens.txt` file containing token apikey from centic platform follow instruction below to get:
-- Open centic platform [https://centic.io/quests/](https://centic.io/quests/daily?refferalCode=eJwNwQkRACAIBMBKp4gMcXgzGF928TDILa2UcFikqKsjGtCUvS63y_j7xwuX)
+- Open centic platform [https://centic.io/quests/](https://centic.io/quests/daily?refferalCode=eJwFwQEBACAIA7BKgKgQ53jJYHw3eShrp_kAkcJlJ3FTJYydjdi4CJ31AQtpDFY=)
 - Login With your wallet
 - inspect or just F12, and find Application
 - in local storage find `apiKey_` and copy all value.
